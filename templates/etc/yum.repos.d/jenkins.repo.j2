@@ -1,0 +1,10 @@
+[jenkins]
+{% if jenkins_repo_lts is defined and jenkins_repo_lts %}
+name=Jenkins-stable
+baseurl=http://pkg.jenkins.io/redhat-stable
+{% else %}
+name=Jenkins
+baseurl=http://pkg.jenkins.io/redhat
+{% endif %}
+gpgcheck=1
+gpgkey=https://jenkins-ci.org/redhat/jenkins-ci.org.key

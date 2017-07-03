@@ -1,0 +1,21 @@
+---
+dependencies: []
+
+galaxy_info:
+  author: Phil Porada - philporada@gmail.com
+  description: Installs Jenkins
+  company: MITallGuy
+  license: GPLv3
+  min_ansible_version: 2.3
+  platforms:
+    - name: EL
+      versions:
+        - 7
+  categories:
+    - CI
+    - CD
+    - Continuous
+    - Integration
+    - Deployment
+    - Automation
+...

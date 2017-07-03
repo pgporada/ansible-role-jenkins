@@ -1,0 +1,11 @@
+---
+jenkins_repo_lts: true
+
+jenkins_use_openjdk: true
+
+jenkins_port: 8080
+jenkins_listen_address: 127.0.0.1
+jenkins_java_opts: "-Xms2048m -Xmx2048m -XX:MaxMetaspaceSize=128m -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8 -XX:+UseG1GC"
+
+jenkins_packages: []
+...

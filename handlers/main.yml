@@ -1,0 +1,13 @@
+---
+- name: Reload systemd
+  become: true
+  become_method: sudo
+  command: systemctl daemon-reload
+
+- name: Restart jenkins
+  become: true
+  become_method: sudo
+  service:
+    name: jenkins
+    state: restarted
+...

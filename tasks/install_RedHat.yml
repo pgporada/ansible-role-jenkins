@@ -1,0 +1,131 @@
+---
+- name: Get Jenkins repo for RedHat OS family
+  become: true
+  become_method: sudo
+  template:
+    src: etc/yum.repos.d/jenkins.repo.j2
+    dest: /etc/yum.repos.d/jenkins.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install Jenkins repository GPG key
+  rpm_key:
+    key: "https://jenkins-ci.org/redhat/jenkins-ci.org.key"
+    state: present
+
+- name: Install OpenJDK
+  become: true
+  become_method: sudo
+  package:
+    name: java
+    state: present
+  when: jenkins_use_openjdk is defined and jenkins_use_openjdk
+  tags:
+    - jenkins
+    - jenkins::install
+
+- name: Install Jenkins and dependencies
+  become: true
+  become_method: sudo
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - jenkins
+    - "{{ jenkins_packages }}"
+  tags:
+    - jenkins
+    - jenkins::install
+  notify:
+    - Restart jenkins
+
+# Per conversation on 11/9/2016, we need to discuss if app roles will handle their own
+# SELinux configuration and use the ansible-role-selinux to just prep the box with SELinux tools
+- name: Get SELinux packages
+  become: true
+  become_method: sudo
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - libselinux-python
+    - policycoreutils-python
+  tags:
+    - jenkins
+    - jenkins::install
+    - jenkins::security
+
+- name: SELinux booleans
+  become: true
+  become_method: sudo
+  seboolean:
+    name: "{{ item }}"
+    state: yes
+    persistent: yes
+  with_items:
+    - httpd_can_network_connect
+    - httpd_builtin_scripting
+  tags:
+    - jenkins
+    - jenkins::install
+    - jenkins::security
+
+- name: SELinux port re-map
+  become: true
+  become_method: sudo
+  seport:
+    ports: "{{ jenkins_port }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  tags:
+    - jenkins
+    - jenkins::install
+    - jenkins::security
+
+- name: Configure jenkins
+  become: true
+  become_method: sudo
+  template:
+    src: etc/sysconfig/jenkins.j2
+    dest: /etc/sysconfig/jenkins
+    mode: 0600
+  tags:
+    - jenkins
+    - jenkins::install
+  notify:
+    - Restart jenkins
+
+- name: Ensure jenkins is enabled and running
+  become: true
+  become_method: sudo
+  service:
+    name: jenkins
+    enabled: yes
+    state: started
+  tags:
+    - jenkins
+    - jenkins::install
+  notify:
+    - Restart jenkins
+
+#
+# TODO
+#   This thing fails in AWS but works locally, figure that out
+#
+#- name: Wait for Jenkins to start up before proceeding.
+#  shell: "curl -D - --silent --max-time 5 http://{{ jenkins_listen_address }}:{{ jenkins_port }}"
+#  register: result
+#  until: (result.stdout.find("403 Forbidden") != -1) or (result.stdout.find("200 OK") != -1) and (result.stdout.find("Please wait while") == -1)
+#  retries: "5"
+#  delay: "10"
+#  changed_when: false
+
+# By calling flush_handlers, we make sure the handler is run *right now*
+- name: Flush all handlers immediately
+  meta: flush_handlers
+  tags:
+    - jenkins
+    - jenkins::install
+...
